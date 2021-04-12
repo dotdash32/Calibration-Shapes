@@ -1,4 +1,4 @@
-#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------
 # Cura PostProcessingPlugin
 # Author:   5axes
 # Date:     February 29, 2020
@@ -7,10 +7,14 @@
 #           Option for  Speed
 #                       Acceleration
 #                       Junction Deviation
+#                       Marlin Linear Advance
+#                       RepRap Pressure Adance
 #
 #   Version 1.0 29/02/2020
 #   Version 1.1 29/01/2021
-#------------------------------------------------------------------------------
+#   Version 1.2 05/04/2021 by dotdash32(https://github.com/dotdash32) for Marlin Linear Advance & RepRap Pressure Adance
+#
+#------------------------------------------------------------------------------------------------------------------------------------
 
 from ..Script import Script
 from UM.Logger import Logger
@@ -18,7 +22,7 @@ import re #To perform the search
 from UM.Application import Application
 from UM.Message import Message
 
-__version__ = '1.1'
+__version__ = '1.2'
 
 class SpeedTower(Script):
     def __init__(self):
@@ -67,7 +71,6 @@ class SpeedTower(Script):
                     "default_value": 30,
                     "minimum_value": 1,
                     "maximum_value": 1000,
-                    "minimum_value_warning": 5,
                     "maximum_value_warning": 100
                 },
                 "changelayeroffset":

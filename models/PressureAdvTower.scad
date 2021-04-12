@@ -2,9 +2,10 @@
 //
 // Generate STL using OpenSCAD:
 //   openscad square_tower.scad -o square_tower.stl
-
+//
 // Pulled from Klipper documentation
 // https://github.com/KevinOConnor/klipper/tree/master/docs/prints
+//
 
 square_width = 5;
 square_size = 60;
@@ -38,7 +39,8 @@ module anti_warp_feet() {
     module anti_warp_cylinder() {
         cylinder(r=antiwarp_radius, h=antiwarp_height, $fs=.5);
     }
-    dist = antiwarp_radius / 2.5;
+    //dist = antiwarp_radius / 2.5;
+    dist = 0;
     translate([dist, dist, 0])
         anti_warp_cylinder();
     translate([square_size-dist, dist, 0])
@@ -50,7 +52,7 @@ module anti_warp_feet() {
 }
 
 module hollow_square() {
-    difference() {
+    translate([-30, -30, 0]) difference() {
         union() {
             square_with_notches();
             anti_warp_feet();
