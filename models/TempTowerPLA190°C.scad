@@ -1,5 +1,5 @@
 //-------------------------------------------------------------------------------------------
-// Temp Tower PLA
+// Temp Tower PLA limited to 190°C
 //---------------------------
 // Nozzle 0.4
 //---------------------------
@@ -40,8 +40,6 @@ union() {
   translate([1.5, 0.5, nz+step*4]) OneStep("200");
   translate([1.5, 0.5, nz+step*5]) OneStep("195");
   translate([1.5, 0.5, nz+step*6]) OneStep("190");
-  translate([1.5, 0.5, nz+step*7]) OneStep("185");
-  translate([1.5, 0.5, nz+step*8]) OneStep("180");
 }
 translate([1.5, 0.5, nz]) Mat("PLA");
 }

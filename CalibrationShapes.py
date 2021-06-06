@@ -18,6 +18,14 @@
 # V1.2.0   : Linear/Pressure Adv Tower by dotdash32 https://github.com/dotdash32
 # V1.2.1   : Change CopyScript condition to fileSize
 # V1.2.2   : Error correction
+# V1.2.3   : Change error message
+# V1.2.4   : Check Adaptive Layers options for Tower
+# V1.2.5   : Set meshfix_union_all_remove_holes for Tower if Nozzle_Size > 0.4
+# V1.2.6   : Retract tower script modification (Version 1.4)
+#          : https://github.com/5axes/Calibration-Shapes/issues/28
+# V1.3.0   : Test the version: since 4.9 the followin bug is solved .. Don't need to use the function CopyScript
+#          : https://github.com/5axes/Calibration-Shapes/issues/1
+#
 #-----------------------------------------------------------------------------------
 from PyQt5.QtCore import QObject, pyqtProperty, pyqtSignal, pyqtSlot, QUrl
 from PyQt5.QtGui import QDesktopServices
@@ -46,6 +54,9 @@ from UM.Operations.AddSceneNodeOperation import AddSceneNodeOperation
 from cura.Scene.CuraSceneNode import CuraSceneNode
 from cura.Scene.SliceableObjectDecorator import SliceableObjectDecorator
 from cura.Scene.BuildPlateDecorator import BuildPlateDecorator
+
+from cura.CuraVersion import CuraVersion  # type: ignore
+from UM.Version import Version
 
 from UM.Logger import Logger
 from UM.Message import Message
@@ -82,7 +93,26 @@ class CalibrationShapes(QObject, Extension):
         # https://github.com/5axes/Calibration-Shapes/issues/1
         # Cura should be able to find the scripts from inside the plugin folder if the scripts are into a folder named resources
         Resources.addSearchPath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources"))
+ 
+        self.Major=1
+        self.Minor=0
+
+        # Logger.log('d', "Info Version CuraVersion --> " + str(Version(CuraVersion)))
+        Logger.log('d', "Info CuraVersion --> " + str(CuraVersion))
         
+        # Test version for futur release 4.9
+        if "master" in CuraVersion or "beta" in CuraVersion or "BETA" in CuraVersion:
+            # Master is always a developement version.
+            self.Major=4
+            self.Minor=9
+
+        else:
+            try:
+                self.Major = int(CuraVersion.split(".")[0])
+                self.Minor = int(CuraVersion.split(".")[1])
+            except:
+                pass
+                
         self._controller = CuraApplication.getInstance().getController()
         self._message = None
         
@@ -94,25 +124,30 @@ class CalibrationShapes(QObject, Extension):
         self.addMenuItem("", lambda: None)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Calibration Cube"), self.addCalibrationCube)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a PLA TempTower"), self.addPLATempTower)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a PLA TempTower 190°C"), self.addPLATempTowerSimple)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a PLA+ TempTower"), self.addPLAPlusTempTower)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a PETG TempTower"), self.addPETGTempTower)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add an ABS TempTower"), self.addABSTempTower)
-        self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Retract Test"), self.addRetractTest)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Retract Tower"), self.addRetractTower)
+        
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Retract Test"), self.addRetractTest)
         # self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Junction Deviation Tower"), self.addJunctionDeviationTower)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Bridge Test"), self.addBridgeTest)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Thin Wall Test"), self.addThinWall)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add an Overhang Test"), self.addOverhangTest)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Flow Test"), self.addFlowTest)
-        self.addMenuItem(catalog.i18nc("@item:inmenu", "Add an Hole Test"), self.addHoleTest)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Hole Test"), self.addHoleTest)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Tolerance Test"), self.addTolerance)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a MultiCube Calibration"), self.addMultiCube)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Bed Level Calibration"), self.addBedLevelCalibration)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Linear/Pressure Adv Tower"), self.addPressureAdvTower)
         self.addMenuItem("  ", lambda: None)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Cube bi-color"), self.addCubeBiColor)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Bi-Color Calibration Cube"), self.addHollowCalibrationCube)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add an Extruder Offset Calibration Part"), self.addExtruderOffsetCalibration)        
         self.addMenuItem("   ", lambda: None)
-        self.addMenuItem(catalog.i18nc("@item:inmenu", "Copy Scripts"), self.copyScript)
+        if self.Major < 4 or ( self.Major == 4 and self.Minor < 9 ) :
+            self.addMenuItem(catalog.i18nc("@item:inmenu", "Copy Scripts"), self.copyScript)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Define default size"), self.defaultSize)
         self.addMenuItem("    ", lambda: None)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Help"), self.gotoHelp)
@@ -211,7 +246,7 @@ class CalibrationShapes(QObject, Extension):
     def copyScript(self) -> None:
         File_List = ['RetractTower.py', 'SpeedTower.py', 'TempFanTower.py']
         
-        plugPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+        plugPath =  os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources"), "scripts")
         # Logger.log("d", "plugPath= %s", plugPath)
         
         stringMatch = re.split("plugins", plugPath)
@@ -296,37 +331,55 @@ class CalibrationShapes(QObject, Extension):
         model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "JunctionDeviationTower.stl")
         mesh =  trimesh.load(model_definition_path)
         # addShape
-        self._addShape("JunctionDeviationTower",self._toMeshData(mesh))
-        
+        self._addShape("JunctionDeviationTower",self._toMeshData(mesh)) 
+    
     def addPLATempTower(self) -> None:
         model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "TempTowerPLA.stl")
         mesh =  trimesh.load(model_definition_path)
         # addShape
         self._addShape("PLATempTower",self._toMeshData(mesh))
+        self._checkAdaptativ(False)
 
+    def addPLATempTowerSimple(self) -> None:
+        model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "TempTowerPLA190°C.stl")
+        mesh =  trimesh.load(model_definition_path)
+        # addShape
+        self._addShape("PLATempTower",self._toMeshData(mesh))
+        self._checkAdaptativ(False)
+
+    def addPLAPlusTempTower(self) -> None:
+        model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "TempTowerPLA+.stl")
+        mesh =  trimesh.load(model_definition_path)
+        # addShape
+        self._addShape("PLA+TempTower",self._toMeshData(mesh))
+        self._checkAdaptativ(False)
+        
     def addPETGTempTower(self) -> None:
         model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "TempTowerPETG.stl")
         mesh =  trimesh.load(model_definition_path)
         # addShape
         self._addShape("PETGTempTower",self._toMeshData(mesh))
+        self._checkAdaptativ(False)
         
     def addABSTempTower(self) -> None:
         model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "TempTowerABS.stl")
         mesh =  trimesh.load(model_definition_path)
         # addShape
         self._addShape("ABSTempTower",self._toMeshData(mesh))
+        self._checkAdaptativ(False)
+
+    def addRetractTower(self) -> None:
+        model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "RetractTower.stl")
+        mesh =  trimesh.load(model_definition_path)
+        # addShape
+        self._addShape("RetractTower",self._toMeshData(mesh))
+        self._checkAdaptativ(False)
         
     def addRetractTest(self) -> None:
         model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "RetractTest.stl")
         mesh =  trimesh.load(model_definition_path)
         # addShape
         self._addShape("RetractTest",self._toMeshData(mesh))
- 
-    def addRetractTower(self) -> None:
-        model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "RetractTower.stl")
-        mesh =  trimesh.load(model_definition_path)
-        # addShape
-        self._addShape("RetractTower",self._toMeshData(mesh))
         
     def addBridgeTest(self) -> None:
         model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "BridgeTest.stl")
@@ -383,6 +436,16 @@ class CalibrationShapes(QObject, Extension):
         mesh =  trimesh.load(model_definition_path)
         # addShape
         self._addShape("CubeBiColorExt2",self._toMeshData(mesh),2)
+
+    def addHollowCalibrationCube(self) -> None:
+        model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "HollowCalibrationCube.stl")
+        mesh =  trimesh.load(model_definition_path)
+        # addShape
+        self._addShape("CubeBiColorExt",self._toMeshData(mesh),1)
+        model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "HollowCenterCube.stl")
+        mesh =  trimesh.load(model_definition_path)
+        # addShape
+        self._addShape("CubeBiColorInt",self._toMeshData(mesh),2)
         
     def addExtruderOffsetCalibration(self) -> None:
         model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "nozzle-to-nozzle-xy-offset-calibration-pattern-a.stl")
@@ -421,7 +484,32 @@ class CalibrationShapes(QObject, Extension):
         mesh = trimesh.creation.icosphere(subdivisions=4,radius = self._size / 2,)
         mesh.apply_transform(trimesh.transformations.translation_matrix([0, 0, self._size*0.5]))
         self._addShape("Sphere",self._toMeshData(mesh))
- 
+
+    #----------------------------------------------------------
+    # Check adaptive_layer_height_enabled must be False
+    #----------------------------------------------------------   
+    def _checkAdaptativ(self, val):
+        # Logger.log("d", "In checkAdaptativ = %s", str(val))
+        # Fix some settings in Cura to get a better result
+        global_container_stack = CuraApplication.getInstance().getGlobalContainerStack() 
+        adaptive_layer = global_container_stack.getProperty("adaptive_layer_height_enabled", "value")
+        extruder = global_container_stack.extruderList[0]
+        
+        if adaptive_layer !=  val :
+            Message(text = "Info modification current profil adaptive_layer_height_enabled\nNew value : %s" % (str(val)), title = catalog.i18nc("@info:title", "Warning ! Calibration Shapes")).show()
+            # Define adaptive_layer
+            global_container_stack.setProperty("adaptive_layer_height_enabled", "value", False)
+        
+        nozzle_size = float(extruder.getProperty("machine_nozzle_size", "value"))
+        remove_holes = extruder.getProperty("meshfix_union_all_remove_holes", "value")
+        # Logger.log("d", "In checkAdaptativ nozzle_size = %s", str(nozzle_size))
+        # Logger.log("d", "In checkAdaptativ remove_holes = %s", str(remove_holes))
+        
+        if (nozzle_size >  0.4) and (remove_holes == False) :
+            Message(text = "Info modification current profil meshfix_union_all_remove_holes (machine_nozzle_size>0.4)\nNew value : %s" % (str(True)), title = catalog.i18nc("@info:title", "Warning ! Calibration Shapes")).show()
+            # Define adaptive_layer
+            extruder.setProperty("meshfix_union_all_remove_holes", "value", True) 
+            
     #----------------------------------------
     # Initial Source code from  fieldOfView
     #----------------------------------------  
@@ -458,7 +546,7 @@ class CalibrationShapes(QObject, Extension):
         
     # Initial Source code from  fieldOfView
     # https://github.com/fieldOfView/Cura-SimpleShapes/blob/bac9133a2ddfbf1ca6a3c27aca1cfdd26e847221/SimpleShapes.py#L70
-    def _addShape(self, name, mesh_data: MeshData, ext_pos = 0 ) -> None:
+    def _addShape(self, mesh_name, mesh_data: MeshData, ext_pos = 0 ) -> None:
         application = CuraApplication.getInstance()
         global_stack = application.getGlobalContainerStack()
         if not global_stack:
@@ -468,10 +556,10 @@ class CalibrationShapes(QObject, Extension):
 
         node.setMeshData(mesh_data)
         node.setSelectable(True)
-        if len(name)==0:
+        if len(mesh_name)==0:
             node.setName("TestPart" + str(id(mesh_data)))
         else:
-            node.setName(str(name))
+            node.setName(str(mesh_name))
 
         scene = self._controller.getScene()
         op = AddSceneNodeOperation(node, scene.getRoot())
@@ -496,4 +584,5 @@ class CalibrationShapes(QObject, Extension):
         node.addDecorator(SliceableObjectDecorator())
 
         application.getController().getScene().sceneChanged.emit(node)
+        
 

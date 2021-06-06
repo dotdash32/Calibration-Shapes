@@ -1,28 +1,30 @@
-# Cura PostProcessingPlugin
+#------------------------------------------------------------------------------------------------------------------------------------
+#
+# Cura PostProcessing Script
 # Author:   5axes
 # Date:     November 29 2020
 #
-# Description:  postprocessing-script to easily define a Retract Tower
+# Description:  postprocessing script to easily define a Retract Tower
 #
+#------------------------------------------------------------------------------------------------------------------------------------
 #
 #   Version 1.0 29/11/2020
 #   Version 1.1 29/01/2021
 #   Version 1.2 19/02/2021  : First instruction output
+#   Version 1.3 18/04/2021  : ChangeLayerOffset += 2
+#   Version 1.4 01/06/2021  : Detect G91/G90 M82/M83 in G-Code
+#                               https://github.com/5axes/Calibration-Shapes/issues/28
+#   Version 1.5 02/06/2021  : Detect G92 E0 in G-Code
 #
+#------------------------------------------------------------------------------------------------------------------------------------
 
 from ..Script import Script
 from UM.Logger import Logger
 from UM.Application import Application
 import re #To perform the search
-from cura.Settings.ExtruderManager import ExtruderManager
-from collections import namedtuple
 from enum import Enum
-from typing import List, Tuple
-from UM.Message import Message
-from UM.i18n import i18nCatalog
-catalog = i18nCatalog("cura")
 
-__version__ = '1.2'
+__version__ = '1.5'
 
 class Section(Enum):
     """Enum for section type."""
@@ -79,17 +81,38 @@ def is_not_extrusion_line(line: str) -> bool:
     """
     return "G0" in line and "X" in line and "Y" in line and not "E" in line
 
-def is_begin_skin_segment_line(line: str) -> bool:
-    """Check if current line is the start of an skin.
+def is_relative_instruction_line(line: str) -> bool:
+    """Check if current line contain a M83 / G91 instruction
 
     Args:
         line (str): Gcode line
 
     Returns:
-        bool: True if the line is the start of an skin section
+        bool: True contain a M83 / G91 instruction
     """
-    return line.startswith(";TYPE:SKIN")
-    
+    return "G91" in line or "M83" in line
+
+def is_not_relative_instruction_line(line: str) -> bool:
+    """Check if current line contain a M82 / G90 instruction
+
+    Args:
+        line (str): Gcode line
+
+    Returns:
+        bool: True contain a M82 / G90 instruction
+    """
+    return "G90" in line or "M82" in line
+
+def is_reset_extruder_line(line: str) -> bool:
+    """Check if current line contain a G92 E0
+
+    Args:
+        line (str): Gcode line
+
+    Returns:
+        bool: True contain a G92 E0 instruction
+    """
+    return "G92" in line and "E0" in line
     
 class RetractTower(Script):
     def __init__(self):
@@ -140,7 +163,7 @@ class RetractTower(Script):
                     "label": "Change Layer Offset",
                     "description": "if the Tower has a base, put the layer high off it here",
                     "type": "float",
-                    "default_value": 4,
+                    "default_value": 5,
                     "minimum_value": 0
                 },
                 "lcdfeedback":
@@ -175,13 +198,14 @@ class RetractTower(Script):
         ValueChange = self.getSettingValueByKey("valueChange")
         ChangeLayer = self.getSettingValueByKey("changelayer")
         ChangeLayerOffset = self.getSettingValueByKey("changelayeroffset")
-        ChangeLayerOffset += 1  # Modif pour tenir compte du décalage de numérotation dans Gcode
+        ChangeLayerOffset += 2  # Modification to take into account the numbering offset in Gcode
+                                # layer_index = 0 for initial Block 1= Start Gcode normaly first layer = 0 
 
-        CurrentValue = 0
-        save_e = 0
+        CurrentValue = -1
+        save_e = -1
         Command=""
 
-        # Logger.log('d', 'Instruction : {:s}'.format(Instruction))
+        # Logger.log('d', 'Change Layer Offset : {}'.format(ChangeLayerOffset))
         lcd_gcode = "M117 {:s} ({:.1f}/{:.1f})".format(Instruction,StartValue,ValueChange)
         
         if  (Instruction=='speed'):
@@ -189,16 +213,26 @@ class RetractTower(Script):
             ValueChange = ValueChange*60
 
         idl=0
+        current_e = 0
         
         for layer in data:
             layer_index = data.index(layer)
+            # Logger.log('d', 'layer_index : {}'.format(layer_index))
             
             lines = layer.split("\n")
             for line in lines:                  
                 line_index = lines.index(line)
                 
+                if is_relative_instruction_line(line):
+                    relative_extrusion = True
+                if is_not_relative_instruction_line(line):
+                    relative_extrusion = False
+                if is_reset_extruder_line(line):
+                    # Logger.log('d', 'Reset_extruder :' + str(current_e))
+                    current_e = 0
+                    
                 # If we have define a value
-                if CurrentValue>0:
+                if CurrentValue>=0:
                     if is_retract_line(line):
                         # Logger.log('d', 'Retract_line : {}'.format(line))
                         searchF = re.search(r"F(\d*)", line)
@@ -247,15 +281,18 @@ class RetractTower(Script):
                     searchE = re.search(r"E([-+]?\d*\.?\d*)", line)
                     if searchE:
                         save_e=float(searchE.group(1))             
-                                             
+                
+                # Logger.log('d', 'L : {}'.format(line))
                 if line.startswith(";LAYER:"):
-                    # 
+                    # Initialize the change
                     if (layer_index==ChangeLayerOffset):
                         CurrentValue = StartValue
-                            
+                        lcd_gcode = "M117 START {:s} ({:.1f}/{:.1f})".format(Instruction,StartValue,ValueChange)
+                        # Logger.log('d', 'Start Layer Layer_index : {}'.format(layer_index))
+                    # Change the current value   
                     if ((layer_index-ChangeLayerOffset) % ChangeLayer == 0) and ((layer_index-ChangeLayerOffset)>0):
                         CurrentValue += ValueChange
-                    
+                    # Add M117 to add message on LCD
                     if UseLcd == True :
                         lines.insert(line_index + 1, lcd_gcode)
                                                
