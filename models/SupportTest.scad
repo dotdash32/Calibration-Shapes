@@ -3,7 +3,7 @@
 // by Dotdash32 (JDeWitt)
 
 $fa = 1;
-$fs = 0.4;
+$fs = 0.5;
 thickness = 1;
 height = 10;
 bottomPerimeterMultiplier = 1.5; //how much extra around under parts
@@ -28,7 +28,7 @@ module FloatingCube(length, width, rotation) {
     rotate([0,0,rotation]){
         union() {
             translate([length/2,0,-thickness/2]) cube([length, width, thickness], center=true);
-            translate([length,0, -width/2]) cube(width, center=true);
+            translate([length,0, -width/4]) cube([width,width,width/2], center=true);
         }
     }
 }
@@ -43,6 +43,9 @@ module SupportTest(length, width, towerOD) {
         // create bottom tab for floating cube
         translate([0,length,thickness/2]) cube([width*bottomPerimeterMultiplier,width*bottomPerimeterMultiplier,thickness],center=true);
         translate([0,length/2,thickness/2]) cube([width,length,thickness],center=true);
+
+        // finish bottom with little circle
+        cylinder(d=towerOD,h=thickness);
 
 
         translate([0,0,height/2]) difference() {
