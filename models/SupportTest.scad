@@ -4,7 +4,7 @@
 
 // rendering aids
 $fa = 1; //min fragment angle
-$fs = 0.5; // min fragment size
+$fs = 0.5; // min fragment size 
 
 //parameters
 thickness = 1; //primary thickness of walls
