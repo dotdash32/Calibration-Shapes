@@ -41,12 +41,12 @@ module FloatingCube(length, width, rotation) {
 module SupportTest(length, width, towerOD) {
     union() {
         //create bottom tab for floating sphere
-        translate([length,0,0]) cylinder(h=thickness,d=width*bottomPerimeterMultiplier);
-        translate([length/2,0,thickness/2]) cube([length,width,thickness],center=true);
+        translate([-length,0,0]) cylinder(h=thickness,d=width*bottomPerimeterMultiplier);
+        translate([-length/2,0,thickness/2]) cube([length,width,thickness],center=true);
 
         // create bottom tab for floating cube
-        translate([0,length,thickness/2]) cube([width*bottomPerimeterMultiplier,width*bottomPerimeterMultiplier,thickness],center=true);
-        translate([0,length/2,thickness/2]) cube([width,length,thickness],center=true);
+        translate([0,-length,thickness/2]) cube([width*bottomPerimeterMultiplier,width*bottomPerimeterMultiplier,thickness],center=true);
+        translate([0,-length/2,thickness/2]) cube([width,length,thickness],center=true);
 
         // finish bottom with little circle
         cylinder(d=towerOD,h=thickness);
@@ -55,10 +55,10 @@ module SupportTest(length, width, towerOD) {
             union() {
                 cylinder(h=height, d=towerOD,center=true); // main tower
                 translate([0,0,height/2]) {
-                    FloatingSphere(length, width,0);    //sphere for Everywhere
-                    FloatingCube(length, width,90);     //cube   for Everywhere
-                    FloatingSphere(length, width,180);  //sphere for Touching Buildplate
-                    FloatingCube(length, width,270);    //cube   for Touching Buildplate
+                    FloatingSphere(length, width,180);  //sphere for Everywhere
+                    FloatingCube(length, width, 270);   //cube   for Everywhere
+                    FloatingSphere(length, width,0);    //sphere for Touching Buildplate
+                    FloatingCube(length, width,90);     //cube   for Touching Buildplate
         }
             }
             cylinder(h=height, d=towerOD-2*thickness, center=true); // hollow center
