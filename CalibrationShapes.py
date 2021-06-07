@@ -138,6 +138,7 @@ class CalibrationShapes(QObject, Extension):
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Flow Test"), self.addFlowTest)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Hole Test"), self.addHoleTest)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Tolerance Test"), self.addTolerance)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Support Test"), self.addSupportTest)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a MultiCube Calibration"), self.addMultiCube)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Bed Level Calibration"), self.addBedLevelCalibration)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Add a Linear/Pressure Adv Tower"), self.addPressureAdvTower)
@@ -416,6 +417,13 @@ class CalibrationShapes(QObject, Extension):
         mesh =  trimesh.load(model_definition_path)
         # addShape
         self._addShape("Tolerance",self._toMeshData(mesh))
+
+    # Dotdash addition 2 - Support test
+    def addSupportTest(self) -> None:
+        model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "SupportTest.stl")
+        mesh =  trimesh.load(model_definition_path)
+        # addShape
+        self._addShape("SupportTest",self._toMeshData(mesh))
 
     # Dotdash addition - for Linear/Pressure advance
     def addPressureAdvTower(self) -> None:
