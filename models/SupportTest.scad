@@ -8,11 +8,11 @@ $fs = 0.5; // min fragment size
 
 //parameters
 thickness = 1; //primary thickness of walls
-height = 10; //height of tower
-length = 10; //extension of objects from tower
-width = 5; // width of extension tabs, also controls feature size
+height = 20; //height of tower
+length = 15; //extension of objects from tower
+width = 10; // width of extension tabs, also controls feature size
 bottomPerimeterMultiplier = 1.5; //how much extra for parts with matieral under (test "Everywhere" supports)
-towerOD = 5; //diameter of riser tower
+towerOD = 10; //diameter of riser tower
 
 module FloatingSphere(length, width, rotation) { 
 // Create a sphere floating in air with a dangling tab
