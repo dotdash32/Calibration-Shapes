@@ -30,15 +30,19 @@ module SupportTest(length, width, towerOD) {
     union() {
         translate([length-towerOD,length-towerOD,thickness/2]) cube([length+towerOD, length+towerOD,thickness],center=true);
         translate([0,0,height/2+thickness]) difference() {
-            cylinder(h=height, d=towerOD,center=true);
+            union() {
+                cylinder(h=height, d=towerOD,center=true);
+                translate([0,0,height/2]) {
+                    FloatingSphere(length, width,0);
+                    FloatingCube(length, width,90);
+                    FloatingSphere(length, width,180);
+                    FloatingCube(length, width,270);
+        }
+            }
+            
             cylinder(h=height, d=towerOD-2*thickness, center=true);    
         }
-        translate([0,0,height+thickness]) {
-            FloatingSphere(length, width,0);
-            FloatingCube(length, width,90);
-            FloatingSphere(length, width,180);
-            FloatingCube(length, width,270);
-        }
+        
     }
 }
 length = 10;
