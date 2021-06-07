@@ -2,9 +2,15 @@
 // 
 // by Dotdash32 (JDeWitt)
 
+$fa = 1;
+$fs = 0.4;
 thickness = 1;
 height = 10;
-module FloatingSphere(length, width, rotation) {
+bottomPerimeterMultiplier = 1.5; //how much extra around under parts
+
+module FloatingSphere(length, width, rotation) { 
+// Create a sphere floating in air with a dangling tab
+// rotate about center point with 'rotation' for both sphere and cube
     rotate([0,0, rotation]){
         union() {
             translate([length/2,0,-thickness/2]) cube([length, width, thickness], center=true);
@@ -18,6 +24,7 @@ module FloatingSphere(length, width, rotation) {
 }
 
 module FloatingCube(length, width, rotation) {
+// Create a cube floating in air with a dangling tab
     rotate([0,0,rotation]){
         union() {
             translate([length/2,0,-thickness/2]) cube([length, width, thickness], center=true);
@@ -28,8 +35,17 @@ module FloatingCube(length, width, rotation) {
 
 module SupportTest(length, width, towerOD) {
     union() {
-        translate([length-towerOD,length-towerOD,thickness/2]) cube([length+towerOD, length+towerOD,thickness],center=true);
-        translate([0,0,height/2+thickness]) difference() {
+        // translate([length-towerOD,length-towerOD,thickness/2]) cube([length+towerOD, length+towerOD,thickness],center=true);
+        //create bottom tab for floating sphere
+        translate([length,0,0]) cylinder(h=thickness,d=width*bottomPerimeterMultiplier);
+        translate([length/2,0,thickness/2]) cube([length,width,thickness],center=true);
+
+        // create bottom tab for floating cube
+        translate([0,length,thickness/2]) cube([width*bottomPerimeterMultiplier,width*bottomPerimeterMultiplier,thickness],center=true);
+        translate([0,length/2,thickness/2]) cube([width,length,thickness],center=true);
+
+
+        translate([0,0,height/2]) difference() {
             union() {
                 cylinder(h=height, d=towerOD,center=true);
                 translate([0,0,height/2]) {
@@ -39,7 +55,6 @@ module SupportTest(length, width, towerOD) {
                     FloatingCube(length, width,270);
         }
             }
-            
             cylinder(h=height, d=towerOD-2*thickness, center=true);    
         }
         
