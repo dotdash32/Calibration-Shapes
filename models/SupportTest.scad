@@ -42,7 +42,11 @@ module FloatingCube(length, width, rotation) {
 module SupportTest(length, width, towerSize) {
     union() {
         //create bottom tab for floating sphere
-        translate([-length,0,0]) cylinder(h=thickness,d=width*bottomPerimeterMultiplier);
+        difference() {
+            translate([-length,0,0]) sphere(d=width*bottomPerimeterMultiplier);
+            translate([-length,0,-width*bottomPerimeterMultiplier/2]) cube(width*bottomPerimeterMultiplier,center=true);
+        }
+        
         translate([-length/2,0,thickness/2]) cube([length,width,thickness],center=true);
 
         // create bottom tab for floating cube
