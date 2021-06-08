@@ -3,16 +3,17 @@
 // by Dotdash32 (JDeWitt)
 
 // rendering aids
-$fa = 1; //min fragment angle
-$fs = 0.5; // min fragment size 
+// $fa = 3; //min fragment angle
+// $fs = 0.5; // min fragment size
+$fn=45; // number of fragments
 
 //parameters
-thickness = 1; //primary thickness of walls
+thickness = 2; //primary thickness of walls
 height = 20; //height of tower
 length = 15; //extension of objects from tower
 width = 10; // width of extension tabs, also controls feature size
-bottomPerimeterMultiplier = 1.5; //how much extra for parts with matieral under (test "Everywhere" supports)
-towerOD = 10; //diameter of riser tower
+bottomPerimeterMultiplier = 1.25; //how much extra for parts with matieral under (test "Everywhere" supports)
+towerSize = 10; //diameter of riser tower
 
 module FloatingSphere(length, width, rotation) { 
 // Create a sphere floating in air with a dangling tab
@@ -38,7 +39,7 @@ module FloatingCube(length, width, rotation) {
     }
 }
 
-module SupportTest(length, width, towerOD) {
+module SupportTest(length, width, towerSize) {
     union() {
         //create bottom tab for floating sphere
         translate([-length,0,0]) cylinder(h=thickness,d=width*bottomPerimeterMultiplier);
@@ -49,11 +50,11 @@ module SupportTest(length, width, towerOD) {
         translate([0,-length/2,thickness/2]) cube([width,length,thickness],center=true);
 
         // finish bottom with little circle
-        cylinder(d=towerOD,h=thickness);
+        translate([0,0,thickness/2]) cube([towerSize, towerSize,thickness], center=true);
 
         translate([0,0,height/2]) difference() {
             union() {
-                cylinder(h=height, d=towerOD,center=true); // main tower
+                cube([towerSize, towerSize, height],center=true); // main tower
                 translate([0,0,height/2]) {
                     FloatingSphere(length, width,180);  //sphere for Everywhere
                     FloatingCube(length, width, 270);   //cube   for Everywhere
@@ -61,10 +62,10 @@ module SupportTest(length, width, towerOD) {
                     FloatingCube(length, width,90);     //cube   for Touching Buildplate
         }
             }
-            cylinder(h=height, d=towerOD-2*thickness, center=true); // hollow center
+            cube([towerSize-2*thickness, towerSize-2*thickness, height],center=true); // hollow center
         }
         
     }
 }
 
-SupportTest(length,width,towerOD); //
+SupportTest(length,width,towerSize); //
