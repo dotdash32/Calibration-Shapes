@@ -383,10 +383,7 @@ class CalibrationShapes(QObject, Extension):
 
     # Dotdash addition 2 - Support test
     def addSupportTest(self) -> None:
-        model_definition_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "SupportTest.stl")
-        mesh =  trimesh.load(model_definition_path)
-        # addShape
-        self._addShape("SupportTest",self._toMeshData(mesh))
+        self._registerShapeStl("SupportTest")
 
     # Dotdash addition - for Linear/Pressure advance
     def addPressureAdvTower(self) -> None:
