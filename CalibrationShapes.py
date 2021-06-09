@@ -381,6 +381,10 @@ class CalibrationShapes(QObject, Extension):
     def addTolerance(self) -> None:
         self._registerShapeStl("Tolerance")
 
+    # Dotdash addition 2 - Support test
+    def addSupportTest(self) -> None:
+        self._registerShapeStl("SupportTest")
+
     # Dotdash addition - for Linear/Pressure advance
     def addPressureAdvTower(self) -> None:
         self._registerShapeStl("PressureAdv", "PressureAdvTower.stl")
